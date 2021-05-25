@@ -99,6 +99,7 @@ class Behavior:
                 player.rect.x -= 5
             FACING_DIRECTION = "left"
             self.left = False
+            self.right = False
 
         if self.right == True:
             if self.control == True:
@@ -107,6 +108,7 @@ class Behavior:
                 player.rect.x += 5
             FACING_DIRECTION = "right"
             self.right = False
+            self.left = False
         sprites.update()
 
     def online(self):
@@ -133,77 +135,73 @@ class Controller():
 
         print("Controller Initialized")
 
-    def parse_control(self,  player, control):
+    def parse_control(self,  player, control, event):
         global last_update, moved, GAME_METHOD
         self.isJumping = False
-        log_data("debug", f"Threads: {threading.active_count()}", self.__class__.__name__, inspect.stack()[0][3])
-        for event in pygame.event.get():
-            log_data("debug", event, self.__class__.__name__, inspect.stack()[0][3])
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    self.left = True
-                    self.right = False
-                    moved = True
 
-                if event.key == pygame.K_RIGHT:
-                    self.right = True
-                    self.left = False
-                    moved = True
+        # log_data("debug", event, self.__class__.__name__, inspect.stack()[0][3])
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                self.left = True
+                moved = True
 
-                if event.key == (pygame.K_SPACE or pygame.K_UP):
-                    self.isJumping = True
-                    moved = True
+            if event.key == pygame.K_RIGHT:
+                self.right = True
+                moved = True
 
-                if event.key == pygame.K_DOWN:
-                    self.crouch = True
-                    moved = True
+            if event.key == (pygame.K_SPACE or pygame.K_UP):
+                self.isJumping = True
+                moved = True
 
-                if event.key == pygame.K_ESCAPE:
-                    Configuration.exit()
+            if event.key == pygame.K_DOWN:
+                self.crouch = True
+                moved = True
 
-            if control or event.type == JOYDEVICEADDED and event.type is not (pygame.KEYDOWN or pygame.KEYUP):
+            if event.key == pygame.K_ESCAPE:
+                Configuration.exit()
 
-                if event.type == JOYBUTTONUP:
-                    self.control = True
-                    print(event)
+        if control or event.type == JOYDEVICEADDED and event.type is not (pygame.KEYDOWN or pygame.KEYUP):
 
-                if event.type == JOYDEVICEREMOVED:
-                    self.control = False
-                    control = [pygame.joystick.Joystick(
-                        i) for i in range(pygame.joystick.get_count())]
-                    print("Controller removed")
+            if event.type == JOYBUTTONUP:
+                self.control = True
+                print(event)
 
-                if event.type == JOYDEVICEADDED:
-                    self.control = True
-                    control = [pygame.joystick.Joystick(
-                        i) for i in range(pygame.joystick.get_count())]
-                    print("Controller added")
+            if event.type == JOYDEVICEREMOVED:
+                self.control = False
+                control = [pygame.joystick.Joystick(i) for i in range(pygame.joystick.get_count())]
+                print("Controller removed")
 
-                if math.ceil(control[0].get_axis(0)) == 0:
-                    self.control = False
-                    self.neutral = True
+            if event.type == JOYDEVICEADDED:
+                self.control = True
+                control = [pygame.joystick.Joystick(i) for i in range(pygame.joystick.get_count())]
+                print("Controller added")
+
+            if math.ceil(control[0].get_axis(0)) == 0:
+                self.control = False
+                self.neutral = True
 
             if event.type == JOYAXISMOTION:
                 if math.ceil(control[0].get_axis(0)) == -1:
                     self.control = True
                     self.left = True
-                    self.right = False
                     moved = True
                     self.neutral = False
 
-                if math.ceil(control[0].get_axis(0)) == 1:
-                    self.control = True
-                    self.right = True
-                    self.left = False
-                    moved = True
-                    self.neutral = False
+            if math.ceil(control[0].get_axis(0)) == 1:
+                self.control = True
+                self.right = True
+                moved = True
+                self.neutral = False
 
-            if GAME_METHOD == True:
-                self.connection_behavior.offline(self.left, self.right, self.control, player)
-            else:
-                self.connection_behavior.offline(self.left, self.right, self.control, player)
-            self.control = False
+        log_data("debug", f"Right :: {self.right} | Left :: {self.left}", self.__class__.__name__, inspect.stack()[0][3])
 
+        if GAME_METHOD == True:
+            self.connection_behavior.offline(self.left, self.right, self.control, player)
+        else:
+            self.connection_behavior.offline(self.left, self.right, self.control, player)
+        self.control = False
+        self.right = False
+        self.left = False
 
 
 class World:
@@ -250,10 +248,8 @@ def main():
         while True:
             SCREEN.fill((198, 39, 62))
             SCREEN.blit(Configuration.update_fps(font), (10, 0))
-
-            controller_thread = Thread(name='parse_control', target=controller.parse_control, args=(player, joysticks))
-            controller_thread.start()
-
+            for event in pygame.event.get():
+                controller.parse_control(player, joysticks, event)
             sprites.draw(SCREEN)
             pygame.display.update()
             FPSCLOCK.tick(FPS)
