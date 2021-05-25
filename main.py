@@ -29,7 +29,6 @@ Entity definitions
 class Player(pygame.sprite.Sprite):
     def __init__(self, position):
         pygame.sprite.Sprite.__init__(self, self.groups)
-        sprites.add(self, layer=0)
         parsed_spr = Spritesheet('./assets/sprites.png')
         self.PLAYER_SPR = [
             parsed_spr.parse_spr("0.png"),
@@ -70,7 +69,6 @@ class Player(pygame.sprite.Sprite):
 class Obstacle(pygame.sprite.Sprite):
     def __init__(self, position):
         pygame.sprite.Sprite.__init__(self, self.groups)
-        sprites.add(self, layer=0)
 
         parsed_spr = Spritesheet('./assets/blocks.png')
         self.OBJ_SPR = [
@@ -233,17 +231,21 @@ def main():
         """
         Construction player sprite pattern
         """
-
+        global life
         pygame.init()
         pygame.display.set_caption(r"School Panic!")
+
         controller = Controller()
         pygame.joystick.init()
-        joysticks = [pygame.joystick.Joystick(
-            i) for i in range(pygame.joystick.get_count())]
+
+        joysticks = [pygame.joystick.Joystick(i) for i in range(pygame.joystick.get_count())]
+
         Player.groups = sprites, players
         Obstacle.groups = sprites, obstacles
+
         player = Player((PLAYERX, BASEY))
         obs = Obstacle((150, BASEY))
+
         font = pygame.font.SysFont("Arial", 18)
         while True:
             SCREEN.fill((198, 39, 62))
@@ -253,7 +255,19 @@ def main():
             sprites.draw(SCREEN)
             pygame.display.update()
             FPSCLOCK.tick(FPS)
+            print(life)
 
+            if life < 1:
+                life = 0
+                player.kill()
+
+            gets_hit = pygame.sprite.collide_rect(player, obs)
+            if gets_hit == True:
+                life -= 1
+                player.rect.x += 12
+
+
+    
     except KeyboardInterrupt:
         """
         Handling keyboard interruption (usually Ctrl+C) to exit the program.

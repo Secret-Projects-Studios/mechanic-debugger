@@ -17,10 +17,13 @@ SCREEN = pygame.display.set_mode((SCREENWIDTH, SCREENHEIGHT))
 logger = logging.getLogger()
 handler = logging.StreamHandler()
 walls = pygame.sprite.Group()
+
+life = 5
 sprites = pygame.sprite.LayeredUpdates()
 players = pygame.sprite.LayeredUpdates()
-trees = pygame.sprite.LayeredUpdates()
+all_sprites = pygame.sprite.LayeredUpdates()
 obstacles = pygame.sprite.LayeredUpdates()
+
 moved = False
 GAME_METHOD = True
 
